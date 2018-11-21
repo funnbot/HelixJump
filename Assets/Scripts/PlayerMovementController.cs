@@ -15,16 +15,22 @@ public class PlayerMovementController : MonoBehaviour {
 	private float position;
 	private float time;
 
+	void Start() {
+		position = transform.position.y;
+	}
+
 	void Update() {
 		time += Time.deltaTime;
+		var location = transform.position;
 		if (bouncing) {
 			var bounce = BounceCurve.Evaluate(time * BallSpeed) * BounceHeight;
-			transform.position = (position + bounce) * Vector3.up;
+			location.y = position + bounce;
 			if (bounce < 0f) bouncing = false;
 		} else {
-			transform.position = position * Vector3.up;
+			location.y = position;
 			position -= BallSpeed;
 		}
+		transform.position = location;
 	}
 
 	void OnCollisionEnter(Collision other) {
