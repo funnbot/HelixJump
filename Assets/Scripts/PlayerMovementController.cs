@@ -14,29 +14,62 @@ public class PlayerMovementController : MonoBehaviour {
 	private bool bouncing;
 	private float position;
 	private float time;
+	private PlayerLevel Level;
+	private Animator anim;
+	public Rigidbody rb;
 
 	void Start() {
 		position = transform.position.y;
+		Level = GetComponent<PlayerLevel>();
+		anim = GetComponentInChildren<Animator>();
+		rb = GetComponent<Rigidbody>();
+		rb.sleepThreshold = 0;
 	}
 
-	void Update() {
+	void FixedUpdate() {
 		time += Time.deltaTime;
 		var location = transform.position;
 		if (bouncing) {
 			var bounce = BounceCurve.Evaluate(time * BallSpeed) * BounceHeight;
-			location.y = position + bounce;
 			if (bounce < 0f) bouncing = false;
+			else location.y = position + bounce;
 		} else {
-			location.y = position;
-			position -= BallSpeed;
+			if (collisions == 0) {
+				location.y = position;
+				position -= BallSpeed - 0.1f;
+			}
 		}
-		transform.position = location;
+		//rb.MovePosition(location);
 	}
 
+	int collisions;
+
 	void OnCollisionEnter(Collision other) {
-		position = other.contacts[0].point.y +
-			transform.localScale.y / 2;
-		time = 0f;
-		bouncing = true;
+		collisions++;
+		Transform parent = other.transform.parent;
+		if (parent == null) return;
+		Platform p = parent.GetComponent<Platform>();
+		if (p == null) return;
+
+		if (other.transform.CompareTag("Platform")) {
+			Level.CollidePlatform(p);
+			position = other.contacts[0].point.y +
+				transform.localScale.y / 2;
+			time = 0f;
+			bouncing = true;
+			anim.SetTrigger("Bounce");
+		} else if (other.transform.CompareTag("Obstacle")) {
+			Level.CollideObstacle(p);
+		}
+	}
+
+	void OnCollisionExit(Collision other) {
+		collisions--;
+	}
+
+	void OnTriggerEnter(Collider other) {
+		Platform p = other.transform.GetComponent<Platform>();
+		if (p == null) return;
+		Level.PassPlatform(p);
 	}
 }
